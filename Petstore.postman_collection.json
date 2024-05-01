@@ -1,0 +1,421 @@
+{
+	"info": {
+		"_postman_id": "eba38c2e-4485-48b5-912e-6b57a6d5dc2f",
+		"name": "Petstore",
+		"description": "Collection to validate the functionality of different Petstore APIs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "34589272"
+	},
+	"item": [
+		{
+			"name": "Pet",
+			"item": [
+				{
+					"name": "Before",
+					"item": [
+						{
+							"name": "ClearTemporaryVariables",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const clearTemporaryCollectionVariables = (prefix = \"_\") => {",
+											"    const tempCollectionVariables = Object.keys(pm.collectionVariables.toObject());",
+											"    tempCollectionVariables.forEach((tempCollectionVariable) => {",
+											"        if (tempCollectionVariable.startsWith(prefix)) {",
+											"            pm.collectionVariables.unset(tempCollectionVariable);",
+											"            console.log(\"Cleared variable: \", tempCollectionVariable);",
+											"        }",
+											"    })",
+											"    console.log(\"Non-persistent temporary collection variables cleared (or) not present\");",
+											"};",
+											"",
+											"clearTemporaryCollectionVariables();"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "https://postman-echo.com/delete",
+									"protocol": "https",
+									"host": [
+										"postman-echo",
+										"com"
+									],
+									"path": [
+										"delete"
+									]
+								},
+								"description": "This is a dummy request basically run to clear temporary variables if any were set in previous run of `Pet` sub-collection\n\n**Note:** Temporary variables are mainly used for request chaining"
+							},
+							"response": []
+						}
+					],
+					"description": "Request(s) under this `Before` sub-folder/hook clean up temporary variables (start with `_`) that were set in previous run of the `Pet` sub-collection, thus ensuring a clean state for every new run"
+				},
+				{
+					"name": "Pet: Id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let lodash = require('lodash');",
+									"",
+									"pm.test(\"Successful request\", () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    try {",
+									"        pm.test(\"Pet information should be retrieved\", () => {",
+									"            const pet = pm.response.json();",
+									"",
+									"            pm.expect(pet)",
+									"                .to.be.an(\"object\")",
+									"                .to.include.all.keys(\"id\", \"name\", \"status\");",
+									"",
+									"            // Fetch pet details corresponding to the inputted pet id from variables for response validation",
+									"            const expectedPet = JSON.parse(pm.collectionVariables.get(\"_pet\"));",
+									"",
+									"            // Response validation",
+									"            pm.expect(lodash.isEqual(pet, expectedPet))",
+									"                .to.be.true;",
+									"        });",
+									"    } catch (e) {",
+									"        console.error(\"Error parsing JSON: \", e);",
+									"    }",
+									"} else {",
+									"    console.error(\"Error retrieving pet information: \", pm.response.json());",
+									"    postman.setNextRequest(null);",
+									"}",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Add a pet",
+									"const addPet = {",
+									"    url: pm.collectionVariables.get('baseUrl') + '/pet',",
+									"    method: 'POST',",
+									"    header: {",
+									"        'content-type': 'application/json'",
+									"    },",
+									"    body: {",
+									"        mode: 'raw',",
+									"        raw: JSON.stringify({",
+									"            \"id\": 2024,",
+									"            \"category\": {",
+									"                \"id\": 0,",
+									"                \"name\": \"test\"",
+									"            },",
+									"            \"name\": \"testpet\",",
+									"            \"photoUrls\": [",
+									"                \"string\"",
+									"            ],",
+									"            \"tags\": [",
+									"                {",
+									"                    \"id\": 0,",
+									"                    \"name\": \"test\"",
+									"                }",
+									"            ],",
+									"            \"status\": \"available\"",
+									"        })",
+									"    }",
+									"};",
+									"",
+									"pm.sendRequest(addPet, (err, res) => {",
+									"    if (err) {",
+									"        throw new Error('Error sending request: ', err)",
+									"    }",
+									"    switch (res.code) {",
+									"        case 200:",
+									"            const pet = res.json();",
+									"            pm.collectionVariables.set('_pet', JSON.stringify(pet));",
+									"            pm.collectionVariables.set('_petId', pet.id);",
+									"            break;",
+									"        default:",
+									"            throw new Error('Error adding pet:', res.json())",
+									"    }",
+									"})"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/pet/{{_petId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								"{{_petId}}"
+							]
+						},
+						"description": "Retrieve information about a specific pet in the store (identified by the provided 'petId')"
+					},
+					"response": []
+				},
+				{
+					"name": "Pet: Name",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.collectionVariables.set('_updatedPetName', 'testpetmodified')"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Pet name should be modified\", () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "name",
+									"value": "{{_updatedPetName}}",
+									"description": "Updated name of the pet",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pet/{{_petId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								"{{_petId}}"
+							]
+						},
+						"description": "Update name of a specific pet in the store (identified by the provided 'petId')"
+					},
+					"response": []
+				},
+				{
+					"name": "Pet: Id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Successful request\", () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    try {",
+									"        pm.test(\"Updated pet name should be reflected in the pet information\", () => {",
+									"            const pet = pm.response.json();",
+									"",
+									"            pm.expect(pet)",
+									"                .to.be.an(\"object\")",
+									"                .to.include.all.keys(\"id\", \"name\", \"status\");",
+									"",
+									"            // Unpack the response",
+									"            const { id, name, status } = pet",
+									"",
+									"            // Fetch pet details corresponding to the inputted pet id from variables for response validation",
+									"            const expectedPetId = pm.collectionVariables.get(\"_petId\");",
+									"            const expectedPetName = pm.collectionVariables.get(\"_updatedPetName\");",
+									"",
+									"            // Response validation",
+									"            pm.expect(id)",
+									"                .to.eq(expectedPetId, \"Pet id does not match\");",
+									"",
+									"            pm.expect(name)",
+									"                .to.eq(expectedPetName, \"Pet name does not match\");",
+									"",
+									"            pm.expect(status)",
+									"                .to.eq('available', \"Pet status is not available\");",
+									"        });",
+									"    } catch (e) {",
+									"        console.error(\"Error parsing JSON: \", e);",
+									"    }",
+									"} else {",
+									"    console.error(\"Error retrieving pet information: \", pm.response.json());",
+									"    postman.setNextRequest(null);",
+									"}",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/pet/{{_petId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								"{{_petId}}"
+							]
+						},
+						"description": "Retrieve information about a specific pet in the store (identified by the provided 'petId')"
+					},
+					"response": []
+				},
+				{
+					"name": "Pet: Id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Pet should be removed from the list\", () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/pet/{{_petId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								"{{_petId}}"
+							]
+						},
+						"description": "Delete a specific pet in the store (identified by the provided 'petId')"
+					},
+					"response": []
+				},
+				{
+					"name": "Pet: Id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Pet details should not be found\", () => {",
+									"    pm.response.to.have.status(404);",
+									"    pm.response.to.have.status(\"Not Found\")",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/pet/{{_petId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								"{{_petId}}"
+							]
+						},
+						"description": "Retrieve information about a specific pet in the store (identified by the provided 'petId')"
+					},
+					"response": []
+				}
+			],
+			"description": "Requests logically grouped under this sub-folder test the behavior of `Pet` specific APIs"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://petstore.swagger.io/v2",
+			"type": "string"
+		}
+	]
+}
