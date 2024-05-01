@@ -2,6 +2,10 @@
   "name": "petstore-api-tests",
   "version": "1.0.0",
   "description": "Postman collection to validate the functionality of pet store apis",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/saiudayakella/petstore-api-tests.git"
+  },
   "main": "index.js",
   "scripts": {
     "run:postman:collection": "node newman-runner.js",

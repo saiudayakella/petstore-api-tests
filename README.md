@@ -22,7 +22,7 @@ For using newman (command-line collection runner for postman) and generating a H
 
 ## Setup & Installation
 
-1. Clone the repository (or) Unzip the project
+1. Clone the repository "https://github.com/saiudayakella/petstore-api-tests.git" (or) Unzip the project
 
 2. To run the postman collection in GUI mode (via collection runner), ensure `Postman` is installed in the machine
 
